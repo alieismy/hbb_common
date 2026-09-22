@@ -73,7 +73,17 @@ lazy_static::lazy_static! {
     static ref KEY_PAIR: Mutex<Option<KeyPair>> = Default::default();
     static ref USER_DEFAULT_CONFIG: RwLock<(UserDefaultConfig, Instant)> = RwLock::new((UserDefaultConfig::load(), Instant::now()));
     pub static ref NEW_STORED_PEER_CONFIG: Mutex<HashSet<String>> = Default::default();
-    pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
+    pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = {
+        // 统一界面、IPC 和连接逻辑的默认值，仍允许用户配置覆盖。
+        let server = crate::socket_client::check_port(
+            PROD_RENDEZVOUS_SERVER.read().unwrap().clone(), RENDEZVOUS_PORT);
+        let relay = crate::socket_client::increase_port(&server, 1);
+        RwLock::new(HashMap::from([
+            ("custom-rendezvous-server".to_owned(), server),
+            ("relay-server".to_owned(), relay),
+            ("key".to_owned(), RS_PUB_KEY.to_owned()),
+        ]))
+    };
     pub static ref OVERWRITE_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref DEFAULT_DISPLAY_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref OVERWRITE_DISPLAY_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
